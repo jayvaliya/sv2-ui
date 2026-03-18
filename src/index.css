@@ -356,6 +356,17 @@
   border-radius: var(--radius);
 }
 
+@keyframes sv2-fan-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes sv2-fan-burst {
+  0%   { transform: scale(0.84); opacity: 0.86; }
+  72%  { transform: scale(1.08); opacity: 0.24; }
+  100% { transform: scale(1.16); opacity: 0; }
+}
+
 /* Rocket launch — compress → liftoff → accelerate away */
 @keyframes sv2-launch {
   0%   { transform: translateY(0)    scale(1);    opacity: 1; }
