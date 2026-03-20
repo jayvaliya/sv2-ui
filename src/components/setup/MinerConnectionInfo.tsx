@@ -33,30 +33,29 @@ export function MinerConnectionInfo({ isJdMode }: MinerConnectionInfoProps) {
   const translatorUrl = `stratum+tcp://<your-machine-ip>:${TRANSLATOR_PORT}`;
   const jdcUrl = `stratum+tcp://<your-machine-ip>:${JDC_PORT}`;
 
+  const hint = (
+    <p className="text-xs text-muted-foreground">
+      Replace <code className="font-mono bg-muted px-1 py-0.5 rounded text-foreground">&lt;your-machine-ip&gt;</code> with your local network IP (e.g. <code className="font-mono bg-muted px-1 py-0.5 rounded text-foreground">192.168.1.100</code>).
+    </p>
+  );
+
   return (
-    <div className="space-y-3">
+    <div className="grid gap-3 md:grid-cols-2">
       {/* SV1 — always shown */}
-      <div className="p-5 rounded-xl border border-border bg-card space-y-3">
-        <div>
-          <div className="font-semibold text-sm">SV1 Firmware</div>
-          <div className="text-xs text-muted-foreground">Point to the Translator Proxy</div>
-        </div>
+      <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+        <div className="font-semibold text-sm">SV1 Firmware</div>
+        <div className="text-xs text-muted-foreground">Point to the Translator Proxy</div>
         <CopyableAddress address={translatorUrl} />
-        <p className="text-xs text-muted-foreground">
-          Replace <code className="font-mono bg-muted px-1 py-0.5 rounded text-foreground">&lt;your-machine-ip&gt;</code> with
-          the local network IP of the machine running SV2{' '}
-          <span className="whitespace-nowrap">(e.g. <code className="font-mono bg-muted px-1 py-0.5 rounded text-foreground">192.168.1.100</code>)</span>.
-        </p>
+        {hint}
       </div>
 
       {/* SV2 — only in JD mode */}
       {isJdMode && (
-        <div className="p-5 rounded-xl border border-border bg-card space-y-3">
-          <div>
-            <div className="font-semibold text-sm">SV2 Firmware</div>
-            <div className="text-xs text-muted-foreground">Point directly to the JD Client</div>
-          </div>
+        <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+          <div className="font-semibold text-sm">SV2 Firmware</div>
+          <div className="text-xs text-muted-foreground">Point directly to the JD Client</div>
           <CopyableAddress address={jdcUrl} />
+          {hint}
         </div>
       )}
     </div>
