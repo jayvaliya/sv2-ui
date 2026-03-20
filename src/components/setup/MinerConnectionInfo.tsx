@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Check, Wifi } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { TRANSLATOR_PORT, JDC_PORT } from '@/lib/ports';
 
 function CopyableAddress({ address }: { address: string }) {
@@ -37,14 +37,9 @@ export function MinerConnectionInfo({ isJdMode }: MinerConnectionInfoProps) {
     <div className="space-y-3">
       {/* SV1 — always shown */}
       <div className="p-5 rounded-xl border border-border bg-card space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Wifi className="w-4 h-4 text-primary" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm">SV1 Firmware</div>
-            <div className="text-xs text-muted-foreground">Point to the Translator Proxy</div>
-          </div>
+        <div>
+          <div className="font-semibold text-sm">SV1 Firmware</div>
+          <div className="text-xs text-muted-foreground">Point to the Translator Proxy</div>
         </div>
         <CopyableAddress address={translatorUrl} />
         <p className="text-xs text-muted-foreground">
@@ -57,14 +52,9 @@ export function MinerConnectionInfo({ isJdMode }: MinerConnectionInfoProps) {
       {/* SV2 — only in JD mode */}
       {isJdMode && (
         <div className="p-5 rounded-xl border border-border bg-card space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Wifi className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold text-sm">SV2 Firmware</div>
-              <div className="text-xs text-muted-foreground">Point directly to the JD Client</div>
-            </div>
+          <div>
+            <div className="font-semibold text-sm">SV2 Firmware</div>
+            <div className="text-xs text-muted-foreground">Point directly to the JD Client</div>
           </div>
           <CopyableAddress address={jdcUrl} />
         </div>

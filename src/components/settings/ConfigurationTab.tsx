@@ -7,17 +7,11 @@ import { useSetupStatus } from '@/hooks/useSetupStatus';
 import { useControlApi, getCurrentConfig } from '@/hooks/useControlApi';
 import type { SetupData } from '@/components/setup/types';
 import {
-  Settings2,
-  Cpu,
-  Zap,
-  Bitcoin,
   Loader2,
   AlertCircle,
   RotateCw,
   StopCircle,
   Trash2,
-  User,
-  Wallet,
 } from 'lucide-react';
 import { PoolIcon } from '@/components/ui/pool-icon';
 
@@ -78,15 +72,12 @@ export function ConfigurationTab() {
       <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
         <Card className="border-dashed">
           <CardContent className="pt-6">
-            <div className="flex gap-3">
-              <Settings2 className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium text-foreground mb-1">Standalone Mode</p>
-                <p>
-                  This UI is running in monitoring-only mode. Configuration management is not available.
-                  Services should be configured and started manually.
-                </p>
-              </div>
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Standalone Mode</p>
+              <p>
+                This UI is running in monitoring-only mode. Configuration management is not available.
+                Services should be configured and started manually.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -211,11 +202,8 @@ export function ConfigurationTab() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="h-5 w-5 text-primary" />
-                Current Configuration
-              </CardTitle>
-              <CardDescription>Your active mining stack setup</CardDescription>
+              <CardTitle>Current Configuration</CardTitle>
+              <CardDescription>Your active mining client setup</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleReconfigure}>
@@ -231,19 +219,12 @@ export function ConfigurationTab() {
         <CardContent className="space-y-4">
           {/* Mining Mode */}
           <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-muted/20">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">
-                {isSoloMode
-                  ? <Cpu className="w-5 h-5 text-orange-500" />
-                  : <Zap className="w-5 h-5 text-blue-500" />}
-              </div>
-              <div>
-                <p className="font-medium">Mining Mode</p>
-                <p className="text-sm text-muted-foreground">
-                  {isSoloMode ? 'Solo Mining' : 'Pool Mining'}
-                  {isJdMode && ' (Job Declaration)'}
-                </p>
-              </div>
+            <div>
+              <p className="font-medium">Mining Mode</p>
+              <p className="text-sm text-muted-foreground">
+                {isSoloMode ? 'Solo Mining' : 'Pool Mining'}
+                {isJdMode && ' (Job Declaration)'}
+              </p>
             </div>
             <Badge variant={isSoloMode ? 'default' : 'secondary'}>
               {isSoloMode ? 'Solo' : 'Pool'}
@@ -271,54 +252,33 @@ export function ConfigurationTab() {
           {/* Username */}
           {(config.translator?.user_identity || config.jdc?.user_identity) && (
             <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium">{isSoloMode ? 'Bitcoin Address' : 'Pool Username'}</p>
-                  <p className="font-mono text-xs text-muted-foreground truncate">
-                    {config.translator?.user_identity || config.jdc?.user_identity}
-                  </p>
-                </div>
-              </div>
+              <p className="font-medium mb-1">{isSoloMode ? 'Bitcoin Address' : 'Pool Username'}</p>
+              <p className="font-mono text-sm truncate">
+                {config.translator?.user_identity || config.jdc?.user_identity}
+              </p>
             </div>
           )}
 
           {/* Bitcoin Core (JD mode) */}
           {isJdMode && config.bitcoin && (
-            <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">
-                  <Bitcoin className="w-5 h-5 text-orange-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium">Bitcoin Core</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <Badge variant="outline" className="text-xs">{config.bitcoin.network}</Badge>
-                    <p className="text-muted-foreground font-mono text-xs truncate">
-                      {config.bitcoin.socket_path}
-                    </p>
-                  </div>
-                </div>
+            <div className="p-4 rounded-lg border border-border/50 bg-muted/20 space-y-2">
+              <div className="flex items-center gap-2">
+                <p className="font-medium">Bitcoin Core</p>
+                <Badge variant="outline" className="text-xs">{config.bitcoin.network}</Badge>
               </div>
+              <p className="text-muted-foreground font-mono text-xs truncate">
+                {config.bitcoin.socket_path}
+              </p>
             </div>
           )}
 
           {/* Fallback Address (JD mode) */}
           {isJdMode && config.jdc?.coinbase_reward_address && (
             <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">
-                  <Wallet className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium">Fallback Address</p>
-                  <p className="text-muted-foreground font-mono text-xs truncate">
-                    {config.jdc.coinbase_reward_address}
-                  </p>
-                </div>
-              </div>
+              <p className="font-medium mb-1">Fallback Address</p>
+              <p className="text-muted-foreground font-mono text-xs truncate">
+                {config.jdc.coinbase_reward_address}
+              </p>
             </div>
           )}
         </CardContent>
