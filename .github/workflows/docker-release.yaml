@@ -38,4 +38,4 @@ jobs:
             linux/amd64
             linux/arm64
           tags: |
-            stratumv2/sv2_ui:${{ github.ref_name }}
+            stratumv2/sv2-ui:${{ github.ref_name }}
