@@ -13,7 +13,7 @@ import {
 } from '@/hooks/usePoolData';
 import { useHashrateHistory } from '@/hooks/useHashrateHistory';
 import { useSetupStatus } from '@/hooks/useSetupStatus';
-import { formatHashrate, formatUptime, formatDifficulty } from '@/lib/utils';
+import { formatHashrate, formatDifficulty } from '@/lib/utils';
 import type { Sv1ClientInfo } from '@/types/api';
 /**
  * Unified Dashboard for the SV2 Mining Stack.
@@ -198,23 +198,12 @@ export function UnifiedDashboard() {
   const isPoolConnected = isJdMode ? (translatorHealthy && jdcHealthy) : translatorHealthy;
 
   return (
-    <Shell appMode="translator">
-      {/* Pool Connection Status */}
-      <div className="flex items-center gap-4 text-sm mb-2">
-        <div className="flex items-center gap-2">
-          <div className={`h-2 w-2 rounded-full ${isHealthLoading ? 'bg-muted-foreground animate-pulse' : isPoolConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-          <span className="text-muted-foreground">
-            {isHealthLoading 
-              ? 'Connecting...' 
-              : isPoolConnected 
-                ? `Connected to ${poolName || 'Pool'}` 
-                : 'Disconnected'}
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground ml-auto">
-          Uptime: {formatUptime(uptime)}
-        </span>
-      </div>
+    <Shell
+      appMode="translator"
+      connectionStatus={isHealthLoading ? 'connecting' : isPoolConnected ? 'connected' : 'disconnected'}
+      poolName={poolName ?? undefined}
+      uptime={uptime}
+    >
 
       {/* Start Mining Banner (configured but stopped) */}
       {configuredButStopped && showError && (

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Sun, Moon, Menu, X, LayoutDashboard, Settings } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatUptime } from '@/lib/utils';
 import type { AppMode, AppFeatures } from '@/types/api';
 import { getAppFeatures } from '@/types/api';
 import { useUiConfig } from '@/hooks/useUiConfig';
@@ -44,9 +44,12 @@ function getNavItems(_features: AppFeatures, _appMode: AppMode): NavItem[] {
 interface ShellProps {
   children: React.ReactNode;
   appMode?: AppMode;
+  connectionStatus?: 'connected' | 'connecting' | 'disconnected';
+  poolName?: string;
+  uptime?: number;
 }
 
-export function Shell({ children, appMode = 'translator' }: ShellProps) {
+export function Shell({ children, appMode = 'translator', connectionStatus, poolName, uptime }: ShellProps) {
   const [location] = useLocation();
   const { isDark, toggle } = useTheme();
   const { config } = useUiConfig();
@@ -153,7 +156,38 @@ export function Shell({ children, appMode = 'translator' }: ShellProps) {
 
           {/* Right side */}
           <div className="ml-auto flex items-center gap-2">
-            <ThemeBtn />
+            {connectionStatus && (
+              <>
+                {/* Mobile: dot + uptime only (no status text to save space) */}
+                <span className="flex sm:hidden items-center gap-2 text-xs text-muted-foreground">
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', {
+                    'bg-green-500': connectionStatus === 'connected',
+                    'bg-red-500': connectionStatus === 'disconnected',
+                    'bg-yellow-500 animate-pulse': connectionStatus === 'connecting',
+                  })} />
+                  Uptime: {formatUptime(uptime ?? 0)}
+                </span>
+                {/* Desktop: dot + full status text + uptime */}
+                <span className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className={cn('h-2 w-2 rounded-full shrink-0', {
+                    'bg-green-500': connectionStatus === 'connected',
+                    'bg-red-500': connectionStatus === 'disconnected',
+                    'bg-yellow-500 animate-pulse': connectionStatus === 'connecting',
+                  })} />
+                  {connectionStatus === 'connected'
+                    ? `Connected to ${poolName || 'Pool'}`
+                    : connectionStatus === 'connecting'
+                    ? 'Connecting...'
+                    : 'Disconnected'}
+                </span>
+                <span className="hidden sm:block text-xs text-muted-foreground border-l border-border pl-2">
+                  Uptime: {formatUptime(uptime ?? 0)}
+                </span>
+              </>
+            )}
+
+            {/* Theme toggle — desktop only (mobile: in hamburger) */}
+            <span className="hidden sm:block"><ThemeBtn /></span>
 
             {/* Hamburger — mobile only */}
             <button
@@ -204,6 +238,13 @@ export function Shell({ children, appMode = 'translator' }: ShellProps) {
                 </Link>
               );
             })}
+            <button
+              onClick={toggle}
+              className="flex items-center w-full px-3 py-2.5 rounded-lg text-[14px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all duration-150"
+            >
+              {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+              {isDark ? 'Light mode' : 'Dark mode'}
+            </button>
           </nav>
         </div>
       </header>
