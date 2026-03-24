@@ -179,6 +179,13 @@ app.post('/api/setup', async (req, res) => {
     // Save state
     await saveState(data);
 
+    // Stop any running containers first (graceful shutdown order matters:
+    // JDC must be stopped before Translator to avoid crashing Bitcoin Core).
+    // This is critical when switching from JD mode to solo mining — without
+    // this, the old JDC container would be left running and crash when the
+    // Translator is replaced underneath it.
+    await stopStack();
+
     // Start the stack
     await startStack(data, CONFIG_DIR);
 
@@ -318,19 +325,44 @@ app.get('*', (_req, res) => {
 });
 
 // Start server
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.listen(PORT, () => {
   const dockerConnection = getDockerConnectionInfo();
   
-  console.log('');
+  console.log(`sv2-ui server running on http://localhost:${PORT}`);
   console.log(`Config directory: ${CONFIG_DIR}`);
   console.log(`Docker: ${dockerConnection.endpoint} (${dockerConnection.source})`);
-  console.log('');
-  console.log('┌─────────────────────────────────────────────────────┐');
-  console.log('│                                                     │');
-  console.log('│   ⛏️  SV2 UI is ready!                               │');
-  console.log('│                                                     │');
-  console.log(`│   Open in browser: http://localhost:${PORT}             │`);
-  console.log('│                                                     │');
-  console.log('└─────────────────────────────────────────────────────┘');
-  console.log('');
+
+  if (isProduction) {
+    console.log('');
+    console.log('┌─────────────────────────────────────────────────────┐');
+    console.log('│                                                     │');
+    console.log('│   ⛏️  SV2 UI is ready!                               │');
+    console.log('│                                                     │');
+    console.log(`│   Open in browser: http://localhost:${PORT}             │`);
+    console.log('│                                                     │');
+    console.log('└─────────────────────────────────────────────────────┘');
+    console.log('');
+  }
 });
+
+// Graceful shutdown: stop mining containers when sv2-ui exits
+let isShuttingDown = false;
+
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log(`\n${signal} received. Stopping mining containers...`);
+  try {
+    await stopStack();
+    console.log('Mining containers stopped.');
+  } catch {
+    // Docker may not be available, that's fine
+  }
+  process.exit(0);
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
