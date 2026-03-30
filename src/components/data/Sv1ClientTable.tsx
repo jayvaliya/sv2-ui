@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { InfoPopover } from '@/components/ui/info-popover';
 import { formatHashrate, truncateHex } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { Sv1ClientInfo } from '@/types/api';
@@ -43,7 +44,19 @@ export function Sv1ClientTable({ clients, isLoading }: Sv1ClientTableProps) {
             <TableHead className="w-[80px]">ID</TableHead>
             <TableHead>Worker Name</TableHead>
             <TableHead>User Identity</TableHead>
-            <TableHead>Hashrate</TableHead>
+            <TableHead>
+              <span className="flex items-center gap-1.5">
+                Estimated Hashrate
+                <InfoPopover>
+                  Your proxy cannot directly measure how fast your miner is hashing. It estimates
+                  hashrate indirectly: it knows the difficulty of the work it assigned you, and it
+                  counts the valid shares you submit. From those two values it calculates how much
+                  hashing you must be doing. This is your estimated hashrate. Sampled every 5
+                  seconds. May take up to 60 seconds to reflect your miner's actual output after
+                  connecting.
+                </InfoPopover>
+              </span>
+            </TableHead>
             <TableHead className="hidden md:table-cell">Channel</TableHead>
             <TableHead className="hidden lg:table-cell">Extranonce1</TableHead>
             <TableHead className="hidden xl:table-cell">Version Rolling</TableHead>
@@ -68,7 +81,7 @@ export function Sv1ClientTable({ clients, isLoading }: Sv1ClientTableProps) {
                 {client.user_identity || '-'}
               </TableCell>
               <TableCell className="font-mono">
-                {client.hashrate !== null ? formatHashrate(client.hashrate) : '-'}
+                {client.hashrate !== null ? `~${formatHashrate(client.hashrate)}` : '-'}
               </TableCell>
               <TableCell className="hidden md:table-cell font-mono text-xs text-muted-foreground">
                 {client.channel_id !== null ? client.channel_id : '-'}
