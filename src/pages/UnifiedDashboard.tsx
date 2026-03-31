@@ -5,7 +5,7 @@ import { MinerConnectionInfo } from '@/components/setup/MinerConnectionInfo';
 import { Shell } from '@/components/layout/Shell';
 import { StatCard } from '@/components/data/StatCard';
 import { HashrateChart } from '@/components/data/HashrateChart';
-import { Sv1ClientTable } from '@/components/data/Sv1ClientTable';
+import { Sv1ClientTable, type SortKey } from '@/components/data/Sv1ClientTable';
 import { usePoolData, useSv1ClientsData, useTranslatorHealth, useJdcHealth } from '@/hooks/usePoolData';
 import { useHashrateHistory } from '@/hooks/useHashrateHistory';
 import { useSetupStatus } from '@/hooks/useSetupStatus';
@@ -28,6 +28,8 @@ import type { Sv1ClientInfo } from '@/types/api';
 export function UnifiedDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortKey, setSortKey] = useState<SortKey>('client_id');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const itemsPerPage = 15;
 
   // Get configured template mode from setup status
@@ -155,15 +157,25 @@ export function UnifiedDashboard() {
     ? (clientChannels?.total_extended || 0) + (clientChannels?.total_standard || 0)
     : activeCount;
   
-  // Filter clients by search
+  // Filter and sort clients
   const filteredClients = useMemo(() => {
-    if (!searchTerm) return allClients;
-    const term = searchTerm.toLowerCase();
-    return allClients.filter((c: Sv1ClientInfo) => 
-      c.authorized_worker_name?.toLowerCase().includes(term) ||
-      c.user_identity?.toLowerCase().includes(term)
-    );
-  }, [allClients, searchTerm]);
+    let list = allClients;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      list = allClients.filter((c: Sv1ClientInfo) =>
+        c.authorized_worker_name?.toLowerCase().includes(term) ||
+        c.user_identity?.toLowerCase().includes(term)
+      );
+    }
+    const nullLast = sortDir === 'asc' ? Infinity : -Infinity;
+    return [...list].sort((a, b) => {
+      const av = a[sortKey] ?? nullLast;
+      const bv = b[sortKey] ?? nullLast;
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [allClients, searchTerm, sortKey, sortDir]);
 
   // Pagination
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
@@ -339,6 +351,13 @@ export function UnifiedDashboard() {
           <Sv1ClientTable
             clients={paginatedClients}
             isLoading={sv1Loading}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={(key) => {
+              if (key === sortKey) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+              else { setSortKey(key); setSortDir('asc'); }
+              setCurrentPage(1);
+            }}
           />
 
           {/* Pagination Footer */}
