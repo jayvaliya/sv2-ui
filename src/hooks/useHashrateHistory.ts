@@ -97,7 +97,6 @@ export function useHashrateHistory(
     addPoint(); // Immediate first sample on mount
     const id = setInterval(addPoint, SAMPLE_INTERVAL_MS);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return history;
