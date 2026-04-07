@@ -60,15 +60,6 @@ const SOLO_POOLS: KnownPool[] = [
     description: 'Solo mining pool by Blitzpool',
     logoUrl: '/blitzpool.svg',
   },
-  {
-    id: 'sovereign-solo',
-    name: 'Sovereign Solo Mining',
-    address: '',
-    port: 3333,
-    authority_public_key: '',
-    description: 'Use your node to create your block template without connecting to a solo pool',
-    badge: 'coming-soon',
-  },
 ];
 
 export function PoolConfigStep({ data, updateData, onNext }: StepProps) {

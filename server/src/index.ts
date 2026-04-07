@@ -95,7 +95,9 @@ app.get('/api/status', async (_req, res) => {
       running,
       miningMode: state.miningMode,
       mode: state.mode,
-      poolName: state.data?.pool?.name ?? null,
+      poolName: state.data?.miningMode === 'solo' && state.data?.mode === 'jd'
+        ? 'Sovereign Solo Mining'
+        : (state.data?.pool?.name ?? null),
       containers,
     };
 
@@ -128,9 +130,10 @@ app.get('/api/config', async (_req, res) => {
 app.post('/api/setup', async (req, res) => {
   try {
     const data: SetupData = req.body;
+    const requiresPool = !(data.miningMode === 'solo' && data.mode === 'jd');
 
     // Validate required fields
-    if (!data.mode || !data.pool || !data.translator) {
+    if (!data.mode || !data.translator || (requiresPool && !data.pool)) {
       return res.status(400).json({ success: false, error: 'Missing required configuration' });
     }
 

@@ -3,6 +3,7 @@ import { useSetupStatus } from './useSetupStatus';
 
 export interface ConnectionStatus {
   status: 'connected' | 'connecting' | 'disconnected';
+  statusLabel: string | null;
   poolName: string | null;
   uptime: number;
 }
@@ -12,7 +13,7 @@ export interface ConnectionStatus {
  * Use this in any page that renders <Shell> to keep the indicator consistent.
  */
 export function useConnectionStatus(): ConnectionStatus {
-  const { mode: templateMode, poolName } = useSetupStatus();
+  const { miningMode, mode: templateMode, poolName } = useSetupStatus();
   const { isJdMode, global: poolGlobal } = usePoolData(templateMode);
 
   const { data: translatorOk, isLoading: translatorHealthLoading, isError: translatorHealthError } =
@@ -24,9 +25,11 @@ export function useConnectionStatus(): ConnectionStatus {
   const jdcHealthy        = jdcOk === true && !jdcHealthError;
   const isHealthLoading   = translatorHealthLoading || (isJdMode && jdcHealthLoading);
   const isPoolConnected   = isJdMode ? (translatorHealthy && jdcHealthy) : translatorHealthy;
+  const isSovereignSolo   = miningMode === 'solo' && templateMode === 'jd';
 
   return {
     status:   isHealthLoading ? 'connecting' : isPoolConnected ? 'connected' : 'disconnected',
+    statusLabel: isSovereignSolo ? 'Mining services healthy' : null,
     poolName: poolName ?? null,
     uptime:   poolGlobal?.uptime_secs ?? 0,
   };

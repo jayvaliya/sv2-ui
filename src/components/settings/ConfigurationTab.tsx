@@ -116,6 +116,14 @@ export function ConfigurationTab() {
 
   const isJdMode = mode === 'jd';
   const isSoloMode = miningMode === 'solo';
+  const isSovereignSolo = isSoloMode && isJdMode;
+  const templateModeLabel = isSoloMode
+    ? isJdMode
+      ? 'Sovereign Solo Mining'
+      : 'Solo Pool Templates'
+    : isJdMode
+      ? 'Custom Templates (Job Declaration)'
+      : 'Pool Templates';
 
   return (
     <div className="space-y-6 animate-in slide-in-from-left-2 duration-300">
@@ -128,8 +136,8 @@ export function ConfigurationTab() {
               <div>
                 <p className="font-medium">{isRunning ? 'Services Running' : 'Services Stopped'}</p>
                 <p className="text-sm text-muted-foreground">
-                  {isSoloMode ? 'Solo Mining' : 'Pool Mining'}
-                  {isJdMode && ' (Job Declaration)'}
+                  {isSovereignSolo ? 'Sovereign Solo Mining' : isSoloMode ? 'Solo Mining' : 'Pool Mining'}
+                  {isJdMode && !isSovereignSolo && ' (Job Declaration)'}
                 </p>
               </div>
             </div>
@@ -214,8 +222,8 @@ export function ConfigurationTab() {
             <div>
               <p className="font-medium">Mining Mode</p>
               <p className="text-sm text-muted-foreground">
-                {isSoloMode ? 'Solo Mining' : 'Pool Mining'}
-                {isJdMode && ' (Job Declaration)'}
+                {isSovereignSolo ? 'Sovereign Solo Mining' : isSoloMode ? 'Solo Mining' : 'Pool Mining'}
+                {isJdMode && !isSovereignSolo && ' (Job Declaration)'}
               </p>
             </div>
             <Badge variant={isSoloMode ? 'default' : 'secondary'}>
@@ -223,8 +231,13 @@ export function ConfigurationTab() {
             </Badge>
           </div>
 
+          <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
+            <p className="font-medium mb-1">Block Templates</p>
+            <p className="text-sm text-muted-foreground">{templateModeLabel}</p>
+          </div>
+
           {/* Pool */}
-          {config.pool && (
+          {!isSovereignSolo && config.pool && (
             <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
               <p className="font-medium">{config.pool.name}</p>
               <p className="text-muted-foreground font-mono text-xs">
@@ -292,7 +305,9 @@ export function ConfigurationTab() {
 
             return (
               <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-                <p className="font-medium mb-1">{isSoloMode ? 'Bitcoin Address' : 'Pool Username'}</p>
+                <p className="font-medium mb-1">
+                  {isSovereignSolo ? 'Miner Identity' : isSoloMode ? 'Bitcoin Address' : 'Pool Username'}
+                </p>
                 <p className="font-mono text-sm truncate">{identity}</p>
               </div>
             );
@@ -314,7 +329,7 @@ export function ConfigurationTab() {
           {/* Fallback Address (JD mode) */}
           {isJdMode && config.jdc?.coinbase_reward_address && (
             <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-              <p className="font-medium mb-1">Fallback Address</p>
+              <p className="font-medium mb-1">{isSovereignSolo ? 'Block Reward Address' : 'Fallback Address'}</p>
               <p className="text-muted-foreground font-mono text-xs truncate">
                 {config.jdc.coinbase_reward_address}
               </p>

@@ -33,6 +33,9 @@ export function BitcoinPrereqStep({ onNext }: StepProps) {
         <p className="text-lg text-muted-foreground">
           Job Declaration requires Bitcoin Core v30.2+ running with IPC enabled
         </p>
+        <p className="text-sm text-muted-foreground mt-3">
+          Bitcoin Core IPC is currently supported on Linux and macOS only. Windows is not supported yet.
+        </p>
       </div>
 
       <div className="text-left space-y-3">
@@ -55,6 +58,17 @@ export function BitcoinPrereqStep({ onNext }: StepProps) {
               bitcoincore.org/en/download
               <ExternalLink className="w-3 h-3" aria-hidden="true" />
             </a>
+            <div className="mt-2">
+              <a
+                href="https://github.com/bitcoin-core/libmultiprocess/pull/231"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+              >
+                Windows IPC support is still in progress
+                <ExternalLink className="w-3 h-3" aria-hidden="true" />
+              </a>
+            </div>
           </div>
         </div>
 

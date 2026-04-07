@@ -18,7 +18,7 @@ import { ConfigurationTab } from '@/components/settings/ConfigurationTab';
  */
 export function Settings() {
   const { config, updateConfig, resetConfig } = useUiConfig();
-  const { status: connectionStatus, poolName, uptime } = useConnectionStatus();
+  const { status: connectionStatus, statusLabel: connectionLabel, poolName, uptime } = useConnectionStatus();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [showSaved, setShowSaved] = useState(false);
@@ -50,6 +50,7 @@ export function Settings() {
   return (
     <Shell
       connectionStatus={connectionStatus}
+      connectionLabel={connectionLabel ?? undefined}
       poolName={poolName ?? undefined}
       uptime={uptime}
     >

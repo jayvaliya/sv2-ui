@@ -40,6 +40,9 @@ export function BitcoinSetup({ data, updateData, onNext }: StepProps) {
         <p className="text-lg text-muted-foreground">
           Tell us how to connect to your running Bitcoin node
         </p>
+        <p className="text-sm text-muted-foreground mt-3">
+          Bitcoin Core IPC is currently available on Linux and macOS only. Windows is not supported yet.
+        </p>
       </div>
 
       <div role="group" aria-labelledby="os-label">
@@ -66,6 +69,9 @@ export function BitcoinSetup({ data, updateData, onNext }: StepProps) {
             <span className={`font-medium text-sm ${os === 'macos' ? 'text-primary' : ''}`}>macOS</span>
           </button>
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Windows is intentionally omitted here because Bitcoin Core IPC support is still in progress.
+        </p>
       </div>
 
       <div role="group" aria-labelledby="network-label">

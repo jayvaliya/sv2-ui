@@ -74,10 +74,12 @@ The backend auto-detects common local Docker sockets, including `/var/run/docker
 
 1. **Setup Wizard** - Guides you through configuration
    - Choose Solo or Pool mining
-   - Select a pool (Braiins, SRI Solo Pool, Blitzpool, etc.)
+   - Choose whether templates come from your own node or from a pool
+   - Select a pool when using pool-provided templates
    - Set the expected hashrate for initial difficulty tuning
    - Configure your username/Bitcoin address
    - For JD mode: select OS, Bitcoin network, and auto-compute the IPC socket path
+   - Bitcoin Core IPC is currently supported on Linux and macOS only; Windows is not supported yet
 
 2. **Docker Orchestration** - Starts and manages containers
    - Translator Proxy (SV1 to SV2 translation)
@@ -110,13 +112,19 @@ Pool ← JDC ← Translator ← SV1 Miners
 Solo Pool ← Translator ← SV1 Miners
 ```
 
+**Sovereign Solo Mining**
+```
+Bitcoin Core ← JDC ← Translator ← SV1 Miners
+```
+
 ## Supported Pools
 
 | Pool | Mode | Status |
 |------|------|--------|
 | Braiins Pool | Pool (No-JD) | Available |
 | SRI Solo Pool | Pool (JD) / Solo | Testing |
-| Blitzpool | Solo | Coming Soon |
+| Blitzpool | Solo | Available |
+| Sovereign Solo Mining | Solo (JD) | Available |
 
 ## Building the Docker Image
 

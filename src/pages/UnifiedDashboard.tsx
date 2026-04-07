@@ -62,10 +62,18 @@ export function UnifiedDashboard() {
   const itemsPerPage = 15;
 
   // Get configured template mode from setup status
-  const { isOrchestrated, isConfigured, isRunning, mode: templateMode, poolName: configPoolName } = useSetupStatus();
+  const {
+    isOrchestrated,
+    isConfigured,
+    isRunning,
+    miningMode,
+    mode: templateMode,
+    poolName: configPoolName,
+  } = useSetupStatus();
 
   // Header connection status (shared with Settings via hook)
-  const { status: connectionStatus, poolName, uptime } = useConnectionStatus();
+  const { status: connectionStatus, statusLabel: connectionLabel, poolName, uptime } = useConnectionStatus();
+  const isSovereignSolo = miningMode === 'solo' && templateMode === 'jd';
 
   // Data from JDC or Translator depending on configured mode
   const {
@@ -205,7 +213,27 @@ export function UnifiedDashboard() {
   }, [sv2Clients, translatedConnectionIds]);
 
   const downstreamWorkerCount = poolGlobal?.sv2_clients?.total_channels || downstreamWorkers.length;
-  const downstreamConnectionCount = poolGlobal?.sv2_clients?.total_clients || sv2Clients?.length || 0;
+  // Hide the internal Translator->JDC hop by counting translated rows as user-facing
+  // worker connections and direct SV2 clients by unique downstream connection ID.
+  const userFacingDownstreamConnectionCount = useMemo(() => {
+    if (!isJdMode) {
+      return 0;
+    }
+
+    const directSv2ConnectionIds = new Set<number>();
+    let translatedWorkerConnections = 0;
+
+    downstreamWorkers.forEach((worker) => {
+      if (worker.channel_type === 'sv1') {
+        translatedWorkerConnections += 1;
+        return;
+      }
+
+      directSv2ConnectionIds.add(worker.connection_id);
+    });
+
+    return directSv2ConnectionIds.size + translatedWorkerConnections;
+  }, [downstreamWorkers, isJdMode]);
   const totalWorkers = isJdMode ? downstreamWorkerCount : sv1TotalClients;
   const activeWorkers = isJdMode ? downstreamWorkerCount : sv1ActiveCount;
   const workerTableLoading = isJdMode ? isSv2ClientsLoading : sv1Loading;
@@ -361,6 +389,7 @@ export function UnifiedDashboard() {
     <Shell
       appMode="translator"
       connectionStatus={connectionStatus}
+      connectionLabel={connectionLabel ?? undefined}
       poolName={poolName ?? undefined}
       uptime={uptime}
     >
@@ -400,7 +429,7 @@ export function UnifiedDashboard() {
       )}
 
       {/* Hero Stats Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className={isSovereignSolo ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'grid gap-4 md:grid-cols-2 lg:grid-cols-4'}>
         <StatCard
           title="Total Estimated Hashrate"
           value={formatHashrate(totalHashrate)}
@@ -425,55 +454,44 @@ export function UnifiedDashboard() {
           }
           subtitle={
             isJdMode
-              ? `${downstreamConnectionCount} downstream connection(s)`
+              ? `${userFacingDownstreamConnectionCount} downstream connection(s)`
               : `${totalWorkers - activeWorkers} offline workers`
           }
         />
 
-        <StatCard
-          title="Share Acceptance"
-          value={(() => {
-            const { submitted, rejected } = shareStats;
-            if (submitted === 0) return <span className="text-muted-foreground">—</span>;
+        {!isSovereignSolo && (
+          <StatCard
+            title="Share Acceptance"
+            value={(() => {
+              const { submitted, rejected } = shareStats;
+              if (submitted === 0) return <span className="text-muted-foreground">—</span>;
 
-            const rate = ((submitted - rejected) / submitted) * 100;
+              const rate = ((submitted - rejected) / submitted) * 100;
+              const label = rejected === 0
+                ? '100%'
+                : `${Math.min(rate, 99.99).toFixed(2)}%`;
 
-            // ── Label ──────────────────────────────────────────────────────
-            // Zero rejections → exact "100%".
-            // Any rejections  → 2 decimal places so even 0.01% rejection is
-            //   visible. Cap at "99.99%" so floating-point can never round up
-            //   to "100.00%" and falsely imply a clean run.
-            const label = rejected === 0
-              ? '100%'
-              : `${Math.min(rate, 99.99).toFixed(2)}%`;
+              const colorClass = rejected === 0
+                ? 'text-green-500'
+                : rate >= 99
+                  ? ''
+                  : rate >= 95
+                    ? 'text-yellow-500'
+                    : 'text-red-500';
 
-            // ── Colour ─────────────────────────────────────────────────────
-            // Green ONLY when literally zero rejections — "99.80%" must never
-            //   look the same as a perfect run.
-            // Neutral (default foreground) for high rates with minor rejects.
-            // Yellow 95–99 %, red below 95 %.
-            const colorClass = rejected === 0
-              ? 'text-green-500'
-              : rate >= 99
-                ? ''                  // neutral — noticeable but not alarming
-                : rate >= 95
-                  ? 'text-yellow-500'
-                  : 'text-red-500';
-
-            return <span className={colorClass}>{label}</span>;
-          })()}
-          subtitle={(() => {
-            const { submitted, rejected } = shareStats;
-            if (submitted === 0) return `via ${poolChannelCount} channel(s)`;
-            const rejectionRate = (rejected / submitted) * 100;
-            // Show exact "0%" when clean; cap display at 0.01% so it never
-            // rounds down to "0.00%" when there ARE rejections.
-            const rejRateLabel = rejected === 0
-              ? '0%'
-              : `${Math.max(rejectionRate, 0.01).toFixed(2)}%`;
-            return `${submitted.toLocaleString()} submitted · ${rejected.toLocaleString()} rejected (${rejRateLabel})`;
-          })()}
-        />
+              return <span className={colorClass}>{label}</span>;
+            })()}
+            subtitle={(() => {
+              const { submitted, rejected } = shareStats;
+              if (submitted === 0) return `via ${poolChannelCount} channel(s)`;
+              const rejectionRate = (rejected / submitted) * 100;
+              const rejRateLabel = rejected === 0
+                ? '0%'
+                : `${Math.max(rejectionRate, 0.01).toFixed(2)}%`;
+              return `${submitted.toLocaleString()} submitted · ${rejected.toLocaleString()} rejected (${rejRateLabel})`;
+            })()}
+          />
+        )}
 
         <StatCard
           title="Best Difficulty"
@@ -531,11 +549,6 @@ export function UnifiedDashboard() {
       {/* Workers Table */}
       {!poolLoading && (
         <>
-          <div className="rounded-xl border border-border/40 bg-card/20 px-4 py-3 text-sm text-muted-foreground">
-            Workers are grouped by downstream connection. Rows sharing the same connection ID
-            belong to the same miner or proxy connection.
-          </div>
-
           <DownstreamWorkerTable
             workers={paginatedWorkers}
             isLoading={workerTableLoading}

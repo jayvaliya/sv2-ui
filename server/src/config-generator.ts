@@ -43,21 +43,22 @@ export const JDC_AUTHORITY_PUBLIC_KEY = ports.JDC_AUTHORITY_PUBLIC_KEY;
  */
 export function generateTranslatorConfig(data: SetupData): string {
   const { pool, translator, mode } = data;
+  const isJdMode = mode === 'jd';
   
-  if (!pool || !translator) {
+  if (!translator || (!isJdMode && !pool)) {
     throw new Error('Pool and translator configuration are required');
   }
   
   // If JD mode, translator connects to JDC container; otherwise directly to pool
   // Both containers are on sv2-network, so we can use the container name as hostname
   // (hostname resolution supported since sv2-apps PR #286)
-  const upstreamAddress = mode === 'jd' ? 'sv2-jdc' : pool.address;
-  const upstreamPort = mode === 'jd' ? JDC_PORT : pool.port;
+  const upstreamAddress = isJdMode ? 'sv2-jdc' : pool!.address;
+  const upstreamPort = isJdMode ? JDC_PORT : pool!.port;
   // When connecting to local JDC, we don't need authority key (using hardcoded keys)
   // When connecting to external pool, we need the pool's authority key
-  const authorityPubkey = mode === 'jd' 
+  const authorityPubkey = isJdMode
     ? JDC_AUTHORITY_PUBLIC_KEY
-    : pool.authority_public_key;
+    : pool!.authority_public_key;
 
   // Min hashrate from user config (default 100 TH/s if not set)
   const minHashrate = translator.min_hashrate ? `${translator.min_hashrate}.0` : '100_000_000_000_000.0';
@@ -78,7 +79,7 @@ min_supported_version = 2
 # Extranonce2 size for downstream connections
 downstream_extranonce2_size = 4
 
-# User identity/username for pool connection
+# User identity/username for the upstream connection
 user_identity = "${translator.user_identity}"
 
 # Aggregate channels: if true, all miners share one upstream channel
@@ -110,11 +111,13 @@ authority_pubkey = "${authorityPubkey}"
  * Generate JD Client config (jdc-config.toml)
  */
 export function generateJdcConfig(data: SetupData): string | null {
-  if (data.mode !== 'jd' || !data.jdc || !data.bitcoin || !data.pool) {
+  if (data.mode !== 'jd' || !data.jdc || !data.bitcoin) {
     return null;
   }
 
   const { pool, jdc, bitcoin } = data;
+  const isSovereignSolo = data.miningMode === 'solo';
+  const jdcSignature = isSovereignSolo ? (jdc.jdc_signature || jdc.user_identity) : jdc.jdc_signature;
 
   // Shares per minute and batch size
   const sharesPerMinute = '6.0';
@@ -137,20 +140,20 @@ authority_public_key = "${JDC_AUTHORITY_PUBLIC_KEY}"
 authority_secret_key = "mkDLTBBRxdBv998612qipDYoTK3YUrqLe8uWw7gu3iXbSrn2n"
 cert_validity_sec = 3600
 
-# User identity/username for pool connection
+# User identity/username for the upstream connection
 user_identity = "${jdc.user_identity}"
 
 # Shares configuration
 shares_per_minute = ${sharesPerMinute}
 share_batch_size = ${shareBatchSize}
 
-# JDC mode: FULLTEMPLATE or COINBASEONLY
-mode = "FULLTEMPLATE"
+# JDC mode: FULLTEMPLATE, COINBASEONLY, or SOLOMINING
+mode = "${isSovereignSolo ? 'SOLOMINING' : 'FULLTEMPLATE'}"
 
 # String to be added into the Coinbase scriptSig
-jdc_signature = "${jdc.jdc_signature}"
+jdc_signature = "${jdcSignature}"
 
-# Solo Mining config - coinbase output for fallback solo mining
+# Solo Mining config - coinbase output for sovereign or fallback solo mining
 coinbase_reward_script = "addr(${jdc.coinbase_reward_address})"
 
 # Protocol Extensions
@@ -161,7 +164,7 @@ required_extensions = []
 monitoring_address = "0.0.0.0:9091"
 monitoring_cache_refresh_secs = 15
 
-# Upstream pool connection
+${!isSovereignSolo && pool ? `# Upstream pool connection
 [[upstreams]]
 authority_pubkey = "${pool.authority_public_key}"
 pool_address = "${pool.address}"
@@ -169,7 +172,7 @@ pool_port = ${pool.port}
 jds_address = "${pool.address}"
 jds_port = 3334
 
-# Bitcoin Core IPC config
+` : ''}# Bitcoin Core IPC config
 [template_provider_type.BitcoinCoreIpc]
 network = "${bitcoin.network}"
 fee_threshold = ${feeThreshold}

@@ -45,11 +45,19 @@ interface ShellProps {
   children: React.ReactNode;
   appMode?: AppMode;
   connectionStatus?: 'connected' | 'connecting' | 'disconnected';
+  connectionLabel?: string;
   poolName?: string;
   uptime?: number;
 }
 
-export function Shell({ children, appMode = 'translator', connectionStatus, poolName, uptime }: ShellProps) {
+export function Shell({
+  children,
+  appMode = 'translator',
+  connectionStatus,
+  connectionLabel,
+  poolName,
+  uptime,
+}: ShellProps) {
   const [location] = useLocation();
   const { isDark, toggle } = useTheme();
   const { config } = useUiConfig();
@@ -175,7 +183,7 @@ export function Shell({ children, appMode = 'translator', connectionStatus, pool
                     'bg-yellow-500 animate-pulse': connectionStatus === 'connecting',
                   })} />
                   {connectionStatus === 'connected'
-                    ? `Connected to ${poolName || 'Pool'}`
+                    ? (connectionLabel || `Connected to ${poolName || 'Pool'}`)
                     : connectionStatus === 'connecting'
                     ? 'Connecting...'
                     : 'Disconnected'}

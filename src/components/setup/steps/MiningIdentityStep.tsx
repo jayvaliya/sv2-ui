@@ -67,7 +67,8 @@ export function MiningIdentityStep({ data, updateData, onNext }: StepProps) {
   const isSoloMode = data.miningMode === 'solo';
   const isJdMode = data.mode === 'jd';
   const isSriPool = data.pool?.authority_public_key === SRI_POOL_AUTHORITY_KEY;
-  const useSriConventions = isSoloMode && isSriPool;
+  const isSovereignSolo = isSoloMode && isJdMode;
+  const useSriConventions = isSoloMode && !isJdMode && isSriPool;
 
   const existingIdentity = data.translator?.user_identity || data.jdc?.user_identity || '';
   const parsed = useSriConventions ? parseSriIdentity(existingIdentity) : { address: '', workerName: '', donationPercent: 0 };
@@ -82,25 +83,49 @@ export function MiningIdentityStep({ data, updateData, onNext }: StepProps) {
   const finalIdentity = useSriConventions
     ? buildSriIdentity(payoutAddress, workerName, donationPercent)
     : userIdentity;
+  const jdcSignature = isSovereignSolo ? finalIdentity : (data.jdc?.jdc_signature || '');
 
   useEffect(() => {
     updateData({
       jdc: isJdMode
-        ? { user_identity: finalIdentity, coinbase_reward_address: coinbaseAddress, jdc_signature: data.jdc?.jdc_signature || '' }
+        ? { user_identity: finalIdentity, coinbase_reward_address: coinbaseAddress, jdc_signature: jdcSignature }
         : null,
       translator: data.translator
         ? { ...data.translator, user_identity: finalIdentity, enable_vardiff: true }
         : { user_identity: finalIdentity, enable_vardiff: true, aggregate_channels: false, min_hashrate: 0 },
     });
-  }, [finalIdentity, coinbaseAddress, isJdMode, data.jdc?.jdc_signature, data.translator, updateData]);
+  }, [finalIdentity, coinbaseAddress, isJdMode, jdcSignature, data.translator, updateData]);
 
   const network = data.bitcoin?.network ?? 'mainnet';
   const needsAddress = donationPercent < 100;
+  const requiresAddressIdentity = isSoloMode && !isJdMode;
+  const identityLabel = isSoloMode
+    ? isSovereignSolo
+      ? 'Miner Identity'
+      : 'Bitcoin Address'
+    : 'Pool Username';
+  const identityPlaceholder = isSoloMode
+    ? isSovereignSolo
+      ? 'solo_miner'
+      : 'bc1q...'
+    : 'username.worker1';
+  const identityHelpText = isSoloMode
+    ? isSovereignSolo
+      ? 'A label for this miner or setup. Your block reward address is configured separately below.'
+      : 'Your Bitcoin address where you want to receive mining rewards'
+    : 'Your pool account username (e.g., username.workername)';
+  const coinbaseLabel = isSovereignSolo ? 'Block Reward Address' : 'Fallback Bitcoin Address';
+  const coinbaseNotice = isSovereignSolo
+    ? 'This is where the full block reward will be paid when your node finds a block.'
+    : 'Used for coinbase rewards if the Job Declarator falls back to solo mining due to pool connection issues.';
+  const coinbaseHelpText = isSovereignSolo
+    ? 'Bitcoin address that receives solo mining rewards'
+    : 'Bitcoin address for receiving rewards during solo mining fallback';
 
   const isValid = useSriConventions
     ? (!needsAddress || (payoutAddress.trim().length > 0 && isValidBitcoinAddress(payoutAddress.trim(), network)))
     : (userIdentity.length > 0 &&
-       (!isSoloMode || isValidBitcoinAddress(userIdentity, network)) &&
+       (!requiresAddressIdentity || isValidBitcoinAddress(userIdentity, network)) &&
        (!isJdMode || isValidBitcoinAddress(coinbaseAddress, network)));
 
   return (
@@ -214,7 +239,7 @@ export function MiningIdentityStep({ data, updateData, onNext }: StepProps) {
       ) : (
         <div>
           <label htmlFor="user-identity" className="block text-sm font-medium mb-2">
-            {isSoloMode ? 'Bitcoin Address' : 'Pool Username'} <span className="text-primary" aria-hidden="true">*</span>
+            {identityLabel} <span className="text-primary" aria-hidden="true">*</span>
             <span className="sr-only">(required)</span>
           </label>
           <input
@@ -222,18 +247,16 @@ export function MiningIdentityStep({ data, updateData, onNext }: StepProps) {
             type="text"
             value={userIdentity}
             onChange={(e) => setUserIdentity(e.target.value)}
-            placeholder={isSoloMode ? 'bc1q...' : 'username.worker1'}
+            placeholder={identityPlaceholder}
             aria-required="true"
             autoComplete="off"
             className="w-full h-10 px-3 rounded-lg border border-input bg-background focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15 outline-none transition-all font-mono text-sm"
           />
-          {isSoloMode && getBitcoinAddressError(userIdentity, network) && (
+          {requiresAddressIdentity && getBitcoinAddressError(userIdentity, network) && (
             <p className="text-xs text-destructive mt-1">{getBitcoinAddressError(userIdentity, network)}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
-            {isSoloMode
-              ? 'Your Bitcoin address where you want to receive mining rewards'
-              : 'Your pool account username (e.g., username.workername)'}
+            {identityHelpText}
           </p>
         </div>
       )}
@@ -241,14 +264,14 @@ export function MiningIdentityStep({ data, updateData, onNext }: StepProps) {
       {isJdMode && (
         <div>
           <label htmlFor="coinbase-address" className="block text-sm font-medium mb-2">
-            Fallback Bitcoin Address <span className="text-primary" aria-hidden="true">*</span>
+            {coinbaseLabel} <span className="text-primary" aria-hidden="true">*</span>
             <span className="sr-only">(required)</span>
           </label>
 
           <div className="mb-3 p-3 rounded-xl bg-muted/40 flex gap-3" role="note">
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">
-              Used for coinbase rewards if the Job Declarator falls back to solo mining due to pool connection issues.
+              {coinbaseNotice}
             </p>
           </div>
 
@@ -266,7 +289,7 @@ export function MiningIdentityStep({ data, updateData, onNext }: StepProps) {
             <p className="text-xs text-destructive mt-1">{getBitcoinAddressError(coinbaseAddress, network)}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
-            Bitcoin address for receiving rewards during solo mining fallback
+            {coinbaseHelpText}
           </p>
         </div>
       )}

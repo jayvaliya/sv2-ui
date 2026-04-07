@@ -51,14 +51,25 @@ function computeSteps(data: SetupData): SetupStep[] {
   const steps: SetupStep[] = ['mining-mode'];
 
   if (isSoloMode) {
-    steps.push('pool', 'hashrate', 'identity', 'review');
+    steps.push('template-mode');
+    if (isJdMode) {
+      steps.push('bitcoin-prereq', 'bitcoin');
+    } else if (data.mode === 'no-jd') {
+      steps.push('pool');
+    }
+    if (data.mode) {
+      steps.push('hashrate', 'identity', 'review');
+    }
     return steps;
   }
 
   if (isPoolMode) {
-    steps.push('template-mode', 'pool');
-    if (isJdMode) steps.push('bitcoin-prereq', 'bitcoin');
-    steps.push('hashrate', 'identity', 'review');
+    steps.push('template-mode');
+    if (data.mode === 'jd') {
+      steps.push('pool', 'bitcoin-prereq', 'bitcoin', 'hashrate', 'identity', 'review');
+    } else if (data.mode === 'no-jd') {
+      steps.push('pool', 'hashrate', 'identity', 'review');
+    }
   }
 
   return steps;

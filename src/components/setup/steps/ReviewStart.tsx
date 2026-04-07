@@ -17,6 +17,17 @@ export function ReviewStart({ data, onComplete }: ReviewStartProps) {
 
   const isJdMode = data.mode === 'jd';
   const isSoloMode = data.miningMode === 'solo';
+  const isSovereignSolo = isSoloMode && isJdMode;
+  const showBlockTemplates = data.mode !== null;
+  const showPoolSection = Boolean(data.pool) && !isSovereignSolo;
+  const showBitcoinSection = isJdMode && Boolean(data.bitcoin);
+  const templateModeLabel = isSoloMode
+    ? isJdMode
+      ? 'Sovereign Solo Mining'
+      : 'Solo Pool Templates'
+    : isJdMode
+      ? 'Custom Templates (Job Declaration)'
+      : 'Pool Templates';
 
   let sectionCount = 0;
   const nextSection = () => (++sectionCount).toString();
@@ -120,16 +131,16 @@ export function ReviewStart({ data, onComplete }: ReviewStartProps) {
           <p className="text-sm text-muted-foreground pl-7">{isSoloMode ? 'Solo Mining' : 'Pool Mining'}</p>
         </div>
 
-        {!isSoloMode && (
+        {showBlockTemplates && (
           <div className="p-5 border-x border-b border-border bg-card">
             <SectionLabel n={nextSection()} label="Block Templates" />
             <p className="text-sm text-muted-foreground pl-7">
-              {isJdMode ? 'Custom Templates (Job Declaration)' : 'Pool Templates'}
+              {templateModeLabel}
             </p>
           </div>
         )}
 
-        {data.pool && (
+        {showPoolSection && data.pool && (
           <div className="p-5 border-x border-b border-border bg-card">
             <SectionLabel n={nextSection()} label={isSoloMode ? 'Solo Pool' : 'Pool'} />
             <div className="text-sm text-muted-foreground space-y-1 pl-7">
@@ -140,7 +151,7 @@ export function ReviewStart({ data, onComplete }: ReviewStartProps) {
           </div>
         )}
 
-        {isJdMode && !isSoloMode && data.bitcoin && (
+        {showBitcoinSection && data.bitcoin && (
           <div className="p-5 border-x border-b border-border bg-card">
             <SectionLabel n={nextSection()} label="Bitcoin Core" />
             <div className="text-sm text-muted-foreground space-y-1 pl-7">
@@ -207,7 +218,12 @@ export function ReviewStart({ data, onComplete }: ReviewStartProps) {
               return <div className="font-mono text-xs">{identity}</div>;
             })()}
             {isJdMode && data.jdc?.coinbase_reward_address && (
-              <div className="font-mono text-xs text-muted-foreground/70">{data.jdc.coinbase_reward_address}</div>
+              <div>
+                <span className="text-muted-foreground text-xs">
+                  {isSovereignSolo ? 'Block Reward Address:' : 'Fallback Address:'}
+                </span>{' '}
+                <span className="font-mono text-xs text-muted-foreground/70">{data.jdc.coinbase_reward_address}</span>
+              </div>
             )}
           </div>
         </div>
@@ -218,9 +234,9 @@ export function ReviewStart({ data, onComplete }: ReviewStartProps) {
         <div className="text-sm">
           <p className="font-medium text-primary mb-1">Ready to start</p>
           <ul className="text-muted-foreground text-xs space-y-0.5 list-disc list-inside">
-            {isJdMode && <li>Start the JD Client container</li>}
+            {isJdMode && <li>{isSovereignSolo ? 'Start the JD Client in sovereign solo mode' : 'Start the JD Client container'}</li>}
             <li>Start the Translator Proxy container</li>
-            <li>Configure networking between services</li>
+            <li>{isSovereignSolo ? 'Wire the Translator to your local JDC instance' : 'Configure networking between services'}</li>
             <li>Redirect to the monitoring dashboard</li>
           </ul>
         </div>
