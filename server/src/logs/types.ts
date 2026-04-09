@@ -51,5 +51,9 @@ export interface LogDiagnosticsResponse {
 
 export interface LogParser {
   code: string;
-  match: (lines: ContainerLogLine[]) => LogDiagnostic | null;
+  // Each parser is expected to represent one diagnostic scenario
+  // (for example, one concrete log-derived user-facing error). It receives
+  // the collated log lines for the logical stream and can emit one or many
+  // matching diagnostics for that scenario.
+  match: (lines: ContainerLogLine[]) => LogDiagnostic | LogDiagnostic[] | null;
 }
