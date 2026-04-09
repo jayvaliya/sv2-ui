@@ -244,8 +244,10 @@ export async function readContainerLogs(
       : demuxDockerLogBuffer(logBuffer);
 
     return chunks.flatMap((chunk) => splitLogLines(container, chunk.stream, chunk.payload));
-  } catch {
-    return [];
+  } catch (error) {
+    throw new Error(`Failed to read logs for ${container} container`, {
+      cause: error instanceof Error ? error : new Error(String(error)),
+    });
   }
 }
 
