@@ -170,6 +170,8 @@ type DockerLogChunk = {
   payload: string;
 };
 
+// Docker uses an 8-byte framing header for non-TTY stdout/stderr multiplexing.
+// Reference: https://docs.docker.com/reference/api/engine/version/v1.45/#tag/Container/operation/ContainerAttach
 function demuxDockerLogBuffer(buffer: Buffer): DockerLogChunk[] {
   const chunks: DockerLogChunk[] = [];
   let offset = 0;
