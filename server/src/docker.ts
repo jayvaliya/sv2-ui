@@ -404,7 +404,7 @@ async function startTranslator(configPath: string): Promise<void> {
         '9092/tcp': [{ HostPort: '9092' }],
       },
       NetworkMode: NETWORK_NAME,
-      RestartPolicy: { Name: 'always' },
+      RestartPolicy: { Name: 'no' },
     },
     ExposedPorts: {
       '34255/tcp': {},
