@@ -5,6 +5,8 @@ type UiConfig = {
   primaryColor: string;
   // Base64 data URL for custom logo, or '' for default
   customLogoDataUrl: string;
+  // Whether the container logs panel is visible on the dashboard
+  showContainerLogs: boolean;
 };
 
 const STORAGE_KEY = 'sv2-ui-config';
@@ -13,6 +15,7 @@ const DEFAULT_CONFIG: UiConfig = {
   // Cyan — matches --primary in index.css light mode
   primaryColor: '190 100% 45%',
   customLogoDataUrl: '',
+  showContainerLogs: false,
 };
 
 function loadConfig(): UiConfig {
@@ -28,6 +31,9 @@ function loadConfig(): UiConfig {
       customLogoDataUrl: typeof parsed.customLogoDataUrl === 'string'
         ? parsed.customLogoDataUrl
         : DEFAULT_CONFIG.customLogoDataUrl,
+      showContainerLogs: typeof parsed.showContainerLogs === 'boolean'
+        ? parsed.showContainerLogs
+        : DEFAULT_CONFIG.showContainerLogs,
     };
   } catch {
     return DEFAULT_CONFIG;

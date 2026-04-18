@@ -5,6 +5,8 @@ import { MinerConnectionInfo } from '@/components/setup/MinerConnectionInfo';
 import { Shell } from '@/components/layout/Shell';
 import { StatCard } from '@/components/data/StatCard';
 import { HashrateChart, type TimeRange } from '@/components/data/HashrateChart';
+import { ContainerLogsPanel } from '@/components/data/ContainerLogsPanel';
+import { Switch } from '@/components/ui/switch';
 import {
   DownstreamWorkerTable,
   type ChannelType,
@@ -27,6 +29,8 @@ import { isAggregatedTproxyPoolName } from '@/components/setup/poolRules';
 import { useSetupStatus } from '@/hooks/useSetupStatus';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useLogDiagnostics } from '@/hooks/useLogDiagnostics';
+import { useContainerLogs } from '@/hooks/useContainerLogs';
+import { useUiConfig } from '@/hooks/useUiConfig';
 import { formatHashrate, formatDifficulty } from '@/lib/utils';
 import type { Sv1ClientInfo } from '@/types/api';
 
@@ -114,6 +118,11 @@ export function UnifiedDashboard() {
   // log-derived diagnostics from the API
   const { data: logDiagnostics } = useLogDiagnostics();
   const diagnostics = logDiagnostics?.diagnostics ?? [];
+
+  // Container logs panel
+  const { config, updateConfig } = useUiConfig();
+  const { data: rawLogs, isLoading: logsLoading } = useContainerLogs(config.showContainerLogs);
+
   const [isStarting, setIsStarting] = useState(false);
 
   const handleStartMining = async () => {
@@ -677,6 +686,24 @@ export function UnifiedDashboard() {
           )}
         </>
       )}
+      {/* Container Logs (advanced toggle) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">Container Logs</span>
+          <Switch
+            checked={config.showContainerLogs}
+            onCheckedChange={(checked) => updateConfig({ showContainerLogs: checked })}
+            aria-label="Toggle container logs"
+          />
+        </div>
+        {config.showContainerLogs && (
+          <ContainerLogsPanel
+            lines={rawLogs?.lines ?? []}
+            isLoading={logsLoading}
+            isJdMode={isJdMode}
+          />
+        )}
+      </div>
     </Shell>
   );
 }

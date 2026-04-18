@@ -19,8 +19,9 @@ import {
   isDockerAvailable,
   ensureDockerAvailable,
   getDockerConnectionInfo,
+  readContainerLogs
 } from './docker.js';
-import { getLogDiagnostics } from './logs/diagnostics.js';
+import { getLogDiagnostics, getLogStreams, readCollatedLogLines } from './logs/diagnostics.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -225,6 +226,34 @@ app.get('/api/logs/diagnostics', async (_req, res) => {
   } catch (error) {
     console.error('Log diagnostics error:', error);
     res.status(500).json({ error: 'Failed to get log diagnostics' });
+  }
+});
+
+/**
+ * GET /api/logs/raw - Get raw collated log lines for the deployed stack
+ * Query params:
+ *   ?tail=N  max lines per container (default 200, capped at 500)
+ */
+app.get('/api/logs/raw', async (req, res) => {
+  try {
+    const state = await loadState();
+    const tailParam = parseInt(req.query.tail as string, 10);
+    const tail = Number.isFinite(tailParam) ? Math.min(Math.max(tailParam, 1), 500) : 200;
+
+    const lines = await readCollatedLogLines(state.mode, (container, opts) =>
+      readContainerLogs(container, { ...opts, tail })
+    );
+
+    res.json({
+      configured: state.configured,
+      mode: state.mode,
+      generatedAt: new Date().toISOString(),
+      streams: getLogStreams(state.mode),
+      lines,
+    });
+  } catch (error) {
+    console.error('Raw logs error:', error);
+    res.status(500).json({ error: 'Failed to get container logs' });
   }
 });
 
